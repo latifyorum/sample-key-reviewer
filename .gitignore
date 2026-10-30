@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Editör / işletim sistemi
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Yerel çalışma dosyaları
+islem_gunlugu.csv
+*.tmp

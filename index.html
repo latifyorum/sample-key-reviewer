@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101113">
+  <title>Sample Key Reviewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/tone@15.1.22/build/Tone.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+        <div>
+          <div class="brand-name">sample<span>key</span></div>
+          <div class="brand-caption">REVIEWER / LOCAL AUDIO WORKSPACE</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="local-pill"><span class="green-dot"></span> LOCAL ONLY</div>
+        <button class="icon-button" id="helpButton" title="Bilgi" aria-label="Bilgi">i</button>
+      </div>
+    </header>
+
+    <section class="workspace-bar">
+      <div class="workspace-title">
+        <span class="eyebrow">WORKSPACE</span>
+        <strong>Sample library</strong>
+      </div>
+      <div class="folder-control">
+        <div class="path-input-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h6l2 2h9v9.8a1.2 1.2 0 0 1-1.2 1.2H4.7a1.2 1.2 0 0 1-1.2-1.2z"/><path d="M3.5 8.5V5.7a1.2 1.2 0 0 1 1.2-1.2h4.3l2 2"/></svg>
+          <input id="folderPath" type="text" spellcheck="false" placeholder="Klasör yolu: D:\\Samples\\Loops" aria-label="Klasör yolu">
+        </div>
+        <button class="button button-secondary" id="browseButton"><span class="button-icon">⌕</span> Klasör seç</button>
+        <label class="check-inline"><input type="checkbox" id="recursive"> <span>Alt klasörler</span></label>
+        <button class="button button-primary" id="scanButton"><span class="button-icon">↻</span> Klasörü tara</button>
+      </div>
+    </section>
+
+    <div class="app-layout">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <div class="section-title">DOSYA KUYRUĞU <span class="count-badge" id="fileCount">0</span></div>
+          <button class="tiny-icon-button" id="refreshButton" title="Durumu yenile" aria-label="Durumu yenile">↻</button>
+        </div>
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.7"/><path d="m16 16 4 4"/></svg>
+          <input id="fileSearch" type="search" placeholder="Dosya ara…" autocomplete="off">
+          <kbd>⌘ K</kbd>
+        </div>
+        <div class="filter-tabs" id="filterTabs">
+          <button class="filter-tab active" data-filter="all">Tümü</button>
+          <button class="filter-tab" data-filter="review">İncele</button>
+          <button class="filter-tab" data-filter="confirmed">Onaylı</button>
+          <button class="filter-tab" data-filter="errors">Hata</button>
+        </div>
+        <div class="file-list" id="fileList">
+          <div class="empty-list">
+            <div class="empty-icon">♪</div>
+            <strong>Henüz dosya yok</strong>
+            <span>Bir sample klasörü seçerek başla.</span>
+          </div>
+        </div>
+        <div class="sidebar-foot">
+          <div class="sidebar-foot-line"><span class="green-dot"></span><span id="sidebarRootLabel">Yerel dosyalar</span></div>
+          <span class="muted-small">Dosyalar yüklenmez veya kopyalanmaz.</span>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <section class="page-heading">
+          <div>
+            <div class="eyebrow">ANALYSIS SESSION <span class="eyebrow-divider">/</span> <span id="sessionFolderName">NO FOLDER SELECTED</span></div>
+            <h1>Key review <span class="heading-dot">.</span></h1>
+            <p>Algoritmayı dinle, adayları karşılaştır ve doğru etiketi onayla.</p>
+          </div>
+          <div class="heading-actions">
+            <button class="button button-quiet" id="undoButton" title="En son başarılı adlandırma işlemlerini geri al">↶ <span>Geri al</span></button>
+            <button class="button button-secondary" id="bulkRenameButton">Onaylıları yeniden adlandır <span class="button-arrow">↗</span></button>
+          </div>
+        </section>
+
+        <section class="metrics-grid" aria-label="Klasör istatistikleri">
+          <div class="metric-card"><div class="metric-top"><span>Toplam dosya</span><span class="metric-symbol">▤</span></div><div class="metric-value" id="statTotal">—</div><div class="metric-foot">Seçilen klasörde</div></div>
+          <div class="metric-card"><div class="metric-top"><span>Ses dosyası</span><span class="metric-symbol">♫</span></div><div class="metric-value" id="statAudio">—</div><div class="metric-foot">Desteklenen format</div></div>
+          <div class="metric-card"><div class="metric-top"><span>Analiz edilen</span><span class="metric-symbol">⌁</span></div><div class="metric-value" id="statAnalyzed">—</div><div class="metric-foot" id="statProgressText">Bekliyor</div></div>
+          <div class="metric-card metric-card-warn"><div class="metric-top"><span>İnceleme gerekli</span><span class="metric-symbol">◈</span></div><div class="metric-value" id="statLow">—</div><div class="metric-foot">Düşük güven</div></div>
+          <div class="metric-card"><div class="metric-top"><span>Onaylanan</span><span class="metric-symbol">✓</span></div><div class="metric-value" id="statConfirmed">—</div><div class="metric-foot" id="statRenamedText">Henüz adlandırılmadı</div></div>
+        </section>
+
+        <section class="scan-progress-panel" id="progressPanel">
+          <div class="progress-copy"><span class="progress-orb"></span><div><strong id="progressTitle">Klasör taraması bekleniyor</strong><span id="progressDetail">Klasör seçip “Klasörü tara” düğmesine bas.</span></div></div>
+          <div class="progress-right"><span id="progressCount">0 / 0</span><div class="progress-track"><div id="progressBar"></div></div></div>
+        </section>
+
+        <section class="settings-strip">
+          <div class="settings-title"><span class="settings-icon">⚙</span><div><strong>Analiz ayarları</strong><span>Yeni tarama için uygulanır</span></div></div>
+          <div class="setting-control"><label for="modeSelect">Mod</label><select id="modeSelect"><option value="auto" selected>Auto</option><option value="pitch">Pitch / tek nota</option><option value="key">Key / tonalite</option></select></div>
+          <div class="setting-control setting-threshold"><label for="oneshotMax">Pitch eşiği <span>sn altı</span></label><div class="number-input"><input id="oneshotMax" type="number" value="4" min="0.1" max="60" step="0.1"><span>s</span></div></div>
+          <div class="setting-control setting-threshold"><label for="minKeyCorr">Min. korelasyon</label><div class="number-input"><input id="minKeyCorr" type="number" value="0.60" min="-1" max="1" step="0.01"></div></div>
+          <div class="setting-control setting-threshold"><label for="minKeyMargin">Min. aday farkı</label><div class="number-input"><input id="minKeyMargin" type="number" value="0.025" min="0" max="1" step="0.005"></div></div>
+          <label class="check-inline check-flats"><input type="checkbox" id="flatsToggle"> <span>Bemol yazımı</span></label>
+        </section>
+
+        <section class="detail-layout">
+          <div class="left-column">
+            <section class="panel sample-panel" id="samplePanel">
+              <div class="panel-header"><div><div class="eyebrow">SELECTED SAMPLE</div><h2 id="selectedFileName">Bir dosya seç</h2><div class="file-meta" id="selectedFileMeta">Klasör seçildiğinde dosyalar burada görünür.</div></div><div class="status-pill" id="selectedStatus"><span class="status-dot"></span><span>Bekliyor</span></div></div>
+              <div class="sample-player-wrap">
+                <div class="player-label-row"><span class="player-icon">▶</span><div><strong>Orijinal sample</strong><span>Hiçbir transpozisyon uygulanmaz</span></div><span class="player-source">SOURCE AUDIO</span></div>
+                <audio id="originalAudio" controls preload="metadata"></audio>
+              </div>
+              <div class="analysis-result" id="analysisResult">
+                <div class="result-placeholder"><div class="placeholder-wave">▂ ▅ ▃ ▆ ▄ ▇ ▂ ▄ ▅</div><strong>Analiz sonucu burada görünür</strong><span>Soldaki listeden bir sample seç.</span></div>
+              </div>
+            </section>
+
+            <section class="panel candidate-panel" id="candidatePanel">
+              <div class="panel-header panel-header-tight"><div><div class="eyebrow">KEY ESTIMATES</div><h2>Key adayları <span class="panel-count" id="candidateCount">—</span></h2></div><button class="text-button" id="toggleAllCandidates" hidden>Tüm 24 adayı göster ↗</button></div>
+              <p class="panel-description">Renkler adayların kendi skorları içindeki sırasını gösterir; gerçek doğruluk yüzdesi değildir.</p>
+              <div class="candidate-grid" id="candidateGrid"><div class="candidates-empty">Analiz sonuçları bekleniyor.</div></div>
+            </section>
+          </div>
+
+          <div class="right-column">
+            <section class="panel note-panel">
+              <div class="panel-header panel-header-tight"><div><div class="eyebrow">CHROMATIC REFERENCE</div><h2>Nota klavyesi</h2></div><div class="octave-control"><label for="referenceOctave">Oktav</label><select id="referenceOctave"><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select></div></div>
+              <p class="panel-description">Bir notaya basarak referans piyano sesini dinle. Bu, sample'ı değiştirmez.</p>
+              <div class="note-grid" id="noteGrid"></div>
+              <div class="piano-attribution"><span class="green-dot"></span><span id="pianoStatus">Örnek tabanlı piyano referansı · ilk kullanımda internet gerekir.</span></div>
+            </section>
+
+            <section class="panel compare-panel">
+              <div class="panel-header panel-header-tight"><div><div class="eyebrow">EAR CHECK</div><h2>A/B karşılaştırma</h2></div><span class="ab-mark">A / B</span></div>
+              <div class="compare-sequence"><div class="sequence-step"><span class="sequence-letter">A</span><div><strong>Piyano referansı</strong><span id="referenceLabel">Seçilen tonalite</span></div><button class="round-play" id="playReferenceButton" aria-label="Referansı çal" title="Referansı çal">▶</button></div><div class="sequence-connector"></div><div class="sequence-step"><span class="sequence-letter sequence-letter-b">B</span><div><strong>Orijinal sample</strong><span>Değiştirilmemiş kaynak dosya</span></div><button class="round-play" id="playOriginalButton" aria-label="Orijinal sample'ı çal" title="Orijinal sample'ı çal">▶</button></div></div>
+              <div class="compare-options"><label class="setting-control compare-type"><span>Referans türü</span><select id="referenceType"><option value="auto">Otomatik (nota/akor)</option><option value="note">Kök nota</option><option value="chord">Majör/minör akor</option><option value="arpeggio">Arpej</option></select></label><label class="check-inline repeat-check"><input id="repeatAB" type="checkbox"><span>A/B tekrar</span></label></div>
+              <div class="compare-actions"><button class="button button-primary button-wide" id="abButton">⇄ <span>Referans + sample dinle</span></button><button class="button button-secondary stop-button" id="stopAudioButton" title="Tüm sesleri durdur">■</button></div>
+              <div class="compare-hint" id="compareHint">Önce tonalite adayı seç, ardından A/B ile kulağınla karşılaştır.</div>
+            </section>
+
+            <section class="panel rename-panel">
+              <div class="panel-header panel-header-tight"><div><div class="eyebrow">FILE ACTION</div><h2>Etiketi onayla</h2></div><span class="rename-lock">⌑ SAFE MODE</span></div>
+              <div class="rename-preview"><div class="rename-name old-name"><span>MEVCUT AD</span><strong id="oldNamePreview">—</strong></div><div class="rename-arrow">↓</div><div class="rename-name new-name"><span>YENİ AD ÖNİZLEMESİ</span><strong id="newNamePreview">—</strong></div></div>
+              <div class="rename-key-row"><label for="manualKeyInput">Tercih edilen key / nota</label><input id="manualKeyInput" type="text" maxlength="8" placeholder="Örn. Dm veya F#1" autocomplete="off"></div>
+              <label class="check-inline force-check"><input type="checkbox" id="forceRename"><span>Var olan key etiketini değiştir</span></label>
+              <div class="rename-actions"><button class="button button-secondary" id="confirmKeyButton" disabled>✓ Key'i onayla</button><button class="button button-primary" id="renameCurrentButton" disabled>Yeniden adlandır ↗</button></div>
+              <p class="rename-footnote">Dosya adı yalnızca sen onayladıktan sonra değiştirilir. Var olan hedef dosyanın üzerine yazılmaz.</p>
+            </section>
+          </div>
+        </section>
+
+        <footer class="app-footer"><span>Sample Key Reviewer <span class="footer-version">v1.0</span></span><span><span class="green-dot"></span> Yerel analiz <span class="footer-divider">·</span> Ses dosyaları bilgisayarında kalır</span><a href="https://tonejs.github.io/" target="_blank" rel="noreferrer">Tone.js audio engine ↗</a></footer>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+  <dialog class="info-dialog" id="infoDialog"><div class="dialog-head"><div><span class="eyebrow">ABOUT THIS APP</span><h2>Analiz hakkında</h2></div><button class="icon-button" id="closeInfoButton" aria-label="Kapat">×</button></div><p>Key korelasyonu ve spektral belirginlik değerleri sezgisel analiz skorlarıdır; kalibre edilmiş doğruluk olasılıkları değildir. Belirsiz sonuçları orijinal sample ve bağımsız piyano referansıyla dinleyerek değerlendir.</p><p>Piyano sesi Tone.js ve Salamander Grand Piano örneklerini kullanır. Referans sesini ilk kez yüklemek için internet bağlantısı gerekir. Sample dosyaları ise yerel Python servisi tarafından bilgisayarından çalınır ve uzak sunucuya yüklenmez.</p><p class="license-note">Piyano örnekleri: Salamander Grand Piano, Alexander Holm, CC BY 3.0. <a href="https://github.com/sfzinstruments/SalamanderGrandPiano" target="_blank" rel="noreferrer">Kaynak ve lisans ↗</a></p><button class="button button-primary button-wide" id="closeInfoButtonBottom">Anladım</button></dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
